@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f6fed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Prix">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Comparateur de prix</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1d2330;--mut:#6b7385;--bd:#e1e5ec;--ac:#2f6fed;--ok:#1b9a5a;--ko:#d6453d;--wa:#d98a00}
+@media(prefers-color-scheme:dark){:root{--bg:#14171d;--card:#1d222b;--tx:#e8ebf1;--mut:#97a0b3;--bd:#2b3240;--ac:#6b97f5;--ok:#46c183;--ko:#f06f66;--wa:#e6a830}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+.grid>*{min-width:0}
+input[type=date]{-webkit-appearance:none;appearance:none;min-height:40px}
+body{margin:0;font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx)}
+header{padding:12px 14px 0;position:sticky;top:0;background:var(--bg);z-index:5}
+h1{font-size:18px;margin:0 0 8px}
+nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px}
+nav button{flex:0 0 auto;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 12px;border-radius:20px;font-size:14px;cursor:pointer}
+nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+main{padding:6px 14px calc(60px + env(safe-area-inset-bottom));max-width:900px;margin:auto}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:10px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{grid-column:1/-1}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+input,select,textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit;font-size:16px}
+input[type=checkbox]{width:auto}
+textarea{min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:16px}
+button.b{background:var(--ac);color:#fff;border:0;padding:10px 14px;border-radius:8px;font:inherit;cursor:pointer}
+button.s{background:transparent;color:var(--tx);border:1px solid var(--bd);padding:8px 12px;border-radius:8px;font:inherit;cursor:pointer}
+button.d{color:var(--ko)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mut{color:var(--mut);font-size:13px}
+.ok{color:var(--ok)}.ko{color:var(--ko)}.wa{color:var(--wa)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:6px 4px;border-bottom:1px solid var(--bd);text-align:left}
+th{font-size:12px;color:var(--mut);font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid var(--bd);color:var(--mut)}
+.best{background:var(--ok);color:#fff;border-color:var(--ok)}
+.bar{height:8px;border-radius:4px;background:var(--ac);min-width:2px}
+.old{opacity:.6}
+.pv{font-size:15px;font-weight:600;margin-top:6px}
+.legend span{margin-right:12px;font-size:13px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+svg{width:100%;height:auto;display:block}
+h2{font-size:16px;margin:14px 0 4px}
+h3{font-size:15px;margin:0 0 6px}
+</style>
+</head>
+<body>
+<header>
+<h1>🛒 Comparateur de prix</h1>
+<nav id="nav">
+<button data-t="saisie" class="on">Saisie</button>
+<button data-t="liste">Liste</button>
+<button data-t="comp">Comparatif</button>
+<button data-t="evol">Évolution</button>
+<button data-t="courses">Courses</button>
+<button data-t="alertes">Alertes</button>
+<button data-t="data">Tickets &amp; données</button>
+</nav>
+</header>
+<main>
+
+<section id="t-saisie" class="on">
+<form id="f" class="card" autocomplete="off">
+<div class="grid">
+<div class="full"><label>Produit (nom générique, ex. « Lait demi-écrémé »)</label><input id="produit" list="dl-produit" required></div>
+<div><label>Marque</label><input id="marque" list="dl-marque"></div>
+<div><label>Enseigne</label><input id="enseigne" list="dl-enseigne" required></div>
+<div><label>Rayon</label><input id="rayon" list="dl-rayon"></div>
+<div><label>Date</label><input id="date" type="date" required></div>
+<div><label>Prix payé (€)</label><input id="prix" inputmode="decimal" required></div>
+<div><label>Quantité</label><input id="quantite" inputmode="decimal" required></div>
+<div><label>Unité</label>
+<select id="unite"><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>L</option><option>pièce</option></select></div>
+<div class="row"><input type="checkbox" id="promo"><label style="margin:0">En promotion</label></div>
+</div>
+<div class="pv" id="pv"></div>
+<div class="row" style="margin-top:10px">
+<button class="b" id="save" type="submit">Ajouter</button>
+<button class="s" id="cancel" type="button" style="display:none">Annuler la modification</button>
+</div>
+<div class="mut" id="msg" style="margin-top:6px"></div>
+</form>
+<div class="mut">Astuce : l’enseigne et la date sont conservées après chaque ajout, pour saisir un ticket à la suite. Pour un pack (ex. 6 × 1,5 L), mets la quantité totale : 9 L.</div>
+<datalist id="dl-produit"></datalist><datalist id="dl-marque"></datalist><datalist id="dl-enseigne"></datalist><datalist id="dl-rayon"></datalist>
+</section>
+
+<section id="t-liste">
+<div class="card"><div class="grid">
+<div><label>Recherche</label><input id="l-q" placeholder="produit, marque…"></div>
+<div><label>Enseigne</label><select id="l-ens"></select></div>
+</div></div>
+<div id="l-out"></div>
+</section>
+
+<section id="t-comp">
+<div class="card"><div class="grid">
+<div><label>Vue</label><select id="c-vue"><option value="prod">Par produit</option><option value="rayon">Par rayon</option></select></div>
+<div><label>Rayon</label><select id="c-rayon"></select></div>
+<div><label>Recherche</label><input id="c-q" placeholder="produit, marque…"></div>
+<div class="full row"><input type="checkbox" id="c-ib"><label style="margin:0">Ignorer la marque (comparer les produits équivalents)</label></div>
+<div class="full row"><input type="checkbox" id="c-multi" checked><label style="margin:0">Seulement les produits relevés dans au moins 2 enseignes</label></div>
+</div></div>
+<div class="mut">Écart = écart du prix unitaire (€/kg, €/L ou €/pièce) par rapport à l’enseigne la moins chère, en tenant compte du relevé le plus récent de chaque enseigne. Les relevés de plus de 90 jours sont grisés.</div>
+<div id="c-out"></div>
+</section>
+
+<section id="t-evol">
+<div class="card"><div class="grid">
+<div class="full"><label>Produit</label><select id="e-prod"></select></div>
+<div class="full row"><input type="checkbox" id="e-ib"><label style="margin:0">Ignorer la marque</label></div>
+</div></div>
+<div id="e-out"></div>
+</section>
+
+<section id="t-courses">
+<div class="card"><h3>Ajouter à ma liste</h3>
+<div class="grid">
+<div class="full"><label>Produit (parmi tes relevés)</label><select id="s-prod"></select></div>
+<div><label>Quantité</label><input id="s-q" inputmode="decimal" value="1"></div>
+<div><label>Unité</label><select id="s-u"></select></div>
+</div>
+<div class="row" style="margin-top:10px"><button class="b" id="s-add" type="button">Ajouter</button></div>
+<div class="mut" style="margin-top:6px">Les coûts sont estimés à partir du dernier prix unitaire relevé dans chaque enseigne. La correspondance suit l’option « ignorer la marque » du Comparatif. Coche un article quand il est dans ton caddie : il sort des totaux.</div>
+</div>
+<div id="s-out"></div>
+</section>
+
+<section id="t-alertes">
+<div class="card"><label>Seuil d’alerte de variation du prix unitaire (%)</label><input id="a-pct" inputmode="decimal"></div>
+<div id="a-out"></div>
+</section>
+
+<section id="t-data">
+<div class="card">
+<h3>Importer un ticket analysé par Claude</h3>
+<div class="mut">Envoie le ticket (photo ou texte) à Claude dans la conversation, copie le bloc JSON obtenu et colle-le ici.</div>
+<textarea id="imp" placeholder='{"enseigne":"Leclerc","date":"2026-10-03","total":23.45,"articles":[…]}'></textarea>
+<div class="row" style="margin-top:8px">
+<button class="s" id="paste" type="button">Coller le presse-papiers</button>
+<button class="s" id="loadtk" type="button">Charger un fichier…</button>
+<input type="file" id="filetk" accept=".json,application/json,text/plain" style="display:none">
+<button class="b" id="analyse" type="button">Prévisualiser</button>
+</div>
+<div id="imp-out"></div>
+</div>
+<div class="card">
+<h3>Sauvegarde</h3>
+<div class="mut">Les données sont stockées dans ce navigateur. Un nettoyage des données du site les efface : exporte régulièrement.</div>
+<div class="mut" style="margin-top:6px">iPhone : Safari → Partager → « Sur l’écran d’accueil ». Les données de Safari et celles de l’app installée sont séparées : saisis et importe tout dans l’app installée, et exporte-la de temps en temps (le fichier va dans Fichiers via le menu Partager).</div>
+<div class="row" style="margin-top:8px">
+<button class="b" id="exp">Exporter (JSON)</button>
+<button class="s" id="expcsv">Exporter (CSV)</button>
+<button class="s" id="impfile">Restaurer un fichier…</button>
+<button class="s d" id="wipe">Tout effacer</button>
+</div>
+<input type="file" id="file" accept=".json,application/json" style="display:none">
+<div class="mut" id="stats" style="margin-top:8px"></div>
+</div>
+</section>
+
+</main>
+<script>
+"use strict";
+const KEY='comparateur-prix-v1';
+let data={entries:[],shopping:[],settings:{ignoreBrand:false,alertPct:10}};
+try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r);data.entries=d.entries||[];data.shopping=d.shopping||[];data.settings=Object.assign(data.settings,d.settings||{})}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){alert('Sauvegarde impossible : '+e.message)}};
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur=n=>n==null?'–':n.toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
+const pct=n=>(n>0?'+':'')+n.toFixed(1).replace('.',',')+' %';
+const fdate=d=>{const p=(d||'').split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d};
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const num=v=>parseFloat(String(v).replace(',','.').replace(/\s/g,''));
+
+const UNITS={g:{f:'kg',m:.001},kg:{f:'kg',m:1},ml:{f:'L',m:.001},cl:{f:'L',m:.01},L:{f:'L',m:1},'pièce':{f:'pièce',m:1}};
+const ALIAS={l:'L',litre:'L',litres:'L',lt:'L',kilo:'kg',kilos:'kg',gr:'g',gramme:'g',grammes:'g',u:'pièce',unite:'pièce','unité':'pièce',unites:'pièce',piece:'pièce','pièces':'pièce',pieces:'pièce',pc:'pièce',x:'pièce',sachet:'pièce',boite:'pièce'};
+function normUnit(u){const k=String(u||'').trim();if(UNITS[k])return k;const l=k.toLowerCase();if(UNITS[l])return l;if(ALIAS[l])return ALIAS[l];return null}
+const fam=e=>UNITS[e.unite].f;
+const unitPrice=e=>{const q=e.quantite*UNITS[e.unite].m;return q>0?e.prix/q:null};
+const upLabel=e=>{const u=unitPrice(e);return u==null?'–':eur(u)+'/'+fam(e)};
+
+/* ---------- navigation ---------- */
+let cur='saisie';
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>show(b.dataset.t));
+function show(t){cur=t;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+t));render();scrollTo(0,0)}
+function render(){
+ if(cur==='saisie')renderDL();
+ if(cur==='liste')renderListe();
+ if(cur==='comp')renderComp();
+ if(cur==='evol')renderEvol();
+ if(cur==='courses')renderCourses();
+ if(cur==='alertes')renderAlertes();
+ if(cur==='data')renderData();
+}
+function uniq(k){return [...new Set(data.entries.map(e=>e[k]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'))}
+function renderDL(){
+ const base=['Fruits et légumes','Boucherie / poissonnerie','Crèmerie','Boulangerie / pâtisserie','Épicerie salée','Épicerie sucrée','Boissons','Surgelés','Hygiène / beauté','Entretien / maison','Bébé','Animalerie','Autre'];
+ const fill=(id,arr)=>$(id).innerHTML=arr.map(x=>'<option value="'+esc(x)+'">').join('');
+ fill('#dl-produit',uniq('produit'));fill('#dl-marque',uniq('marque'));fill('#dl-enseigne',uniq('enseigne'));
+ fill('#dl-rayon',[...new Set([...uniq('rayon'),...base])]);
+}
+
+/* ---------- saisie ---------- */
+let editId=null;
+const F=id=>$('#'+id);
+F('date').value=today();
+function preview(){
+ const p=num(F('prix').value),q=num(F('quantite').value),u=F('unite').value;
+ if(p>0&&q>0){const up=p/(q*UNITS[u].m);F('pv').textContent='= '+eur(up)+' / '+UNITS[u].f}else F('pv').textContent='';
+}
+['prix','quantite','unite'].forEach(i=>F(i).addEventListener('input',preview));
+// autocomplétion : reprend rayon/unité/marque du dernier relevé du même produit
+F('produit').addEventListener('change',()=>{
+ if(editId)return;const n=norm(F('produit').value);
+ const last=[...data.entries].reverse().find(e=>norm(e.produit)===n);
+ if(last){if(!F('rayon').value)F('rayon').value=last.rayon||'';if(!F('marque').value)F('marque').value=last.marque||'';F('unite').value=last.unite}
+});
+F('f').addEventListener('submit',ev=>{
+ ev.preventDefault();
+ const e={produit:F('produit').value.trim(),marque:F('marque').value.trim(),enseigne:F('enseigne').value.trim(),rayon:F('rayon').value.trim(),
+  prix:num(F('prix').value),quantite:num(F('quantite').value),unite:F('unite').value,date:F('date').value,promo:F('promo').checked};
+ if(!(e.prix>=0)||!(e.quantite>0)){F('msg').textContent='Prix ou quantité invalide.';F('msg').className='mut ko';return}
+ if(editId){const i=data.entries.findIndex(x=>x.id===editId);if(i>=0)data.entries[i]=Object.assign(data.entries[i],e);F('msg').textContent='Modification enregistrée.';endEdit()}
+ else{e.id=uid();const nt=alertNote(e);data.entries.push(e);F('msg').textContent='Ajouté : '+e.produit+' ('+upLabel(e)+')'+nt}
+ F('msg').className='mut ok';save();
+ ['produit','marque','prix','quantite'].forEach(i=>F(i).value='');F('promo').checked=false;preview();renderDL();F('produit').focus();
+});
+function startEdit(id){
+ const e=data.entries.find(x=>x.id===id);if(!e)return;editId=id;
+ ['produit','marque','enseigne','rayon','date','unite'].forEach(k=>F(k).value=e[k]||'');
+ F('prix').value=String(e.prix).replace('.',',');F('quantite').value=String(e.quantite).replace('.',',');F('promo').checked=!!e.promo;
+ F('save').textContent='Enregistrer la modification';F('cancel').style.display='';F('msg').textContent='';show('saisie');preview();
+}
+function endEdit(){editId=null;F('save').textContent='Ajouter';F('cancel').style.display='none';F('date').value=today()}
+F('cancel').onclick=()=>{endEdit();['produit','marque','prix','quantite'].forEach(i=>F(i).value='');preview()};
+
+/* ---------- liste ---------- */
+['l-q','l-ens'].forEach(i=>F(i).addEventListener('input',renderListe));
+function renderListe(){
+ const sel=F('l-ens'),v=sel.value;
+ sel.innerHTML='<option value="">Toutes</option>'+uniq('enseigne').map(x=>'<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>').join('');
+ const q=norm(F('l-q').value),ens=sel.value;
+ const rows=data.entries.filter(e=>(!ens||e.enseigne===ens)&&(!q||norm(e.produit+' '+e.marque+' '+e.rayon).includes(q)))
+  .sort((a,b)=>(b.date||'').localeCompare(a.date||'')||0);
+ if(!rows.length){F('l-out').innerHTML='<div class="card mut">Aucun relevé.</div>';return}
+ F('l-out').innerHTML='<div class="mut">'+rows.length+' relevé(s)</div>'+rows.map(e=>
+  '<div class="card"><div class="row" style="justify-content:space-between"><b>'+esc(e.produit)+'</b><b>'+eur(e.prix)+'</b></div>'+
+  '<div class="mut">'+esc([e.marque,e.enseigne,e.rayon].filter(Boolean).join(' · '))+'</div>'+
+  '<div class="mut">'+e.quantite.toString().replace('.',',')+' '+esc(e.unite)+' → '+upLabel(e)+' · '+fdate(e.date)+(e.promo?' · <span class="tag">promo</span>':'')+'</div>'+
+  '<div class="row" style="margin-top:8px"><button class="s" data-ed="'+e.id+'">Modifier</button><button class="s d" data-del="'+e.id+'">Supprimer</button></div></div>').join('');
+ F('l-out').querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>startEdit(b.dataset.ed));
+ F('l-out').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('Supprimer ce relevé ?')){data.entries=data.entries.filter(x=>x.id!==b.dataset.del);save();renderListe()}});
+}
+
+/* ---------- regroupement ---------- */
+function pkey(e,ib){return norm(e.produit)+(ib?'':'|'+norm(e.marque))+'|'+fam(e)}
+function groups(ib){
+ const m=new Map();
+ for(const e of data.entries){if(unitPrice(e)==null)continue;const k=pkey(e,ib);if(!m.has(k))m.set(k,{key:k,items:[]});m.get(k).items.push(e)}
+ const out=[];
+ for(const g of m.values()){
+  g.items.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const last=g.items[g.items.length-1];
+  g.label=last.produit+(!ib&&last.marque?' — '+last.marque:'');g.fam=fam(last);g.rayon=last.rayon||'Sans rayon';
+  const byS=new Map();for(const e of g.items)byS.set(e.enseigne,e); // le plus récent écrase
+  g.stores=[...byS.values()].map(e=>({ens:e.enseigne,e,up:unitPrice(e)})).sort((a,b)=>a.up-b.up);
+  g.min=g.stores[0].up;
+  g.stores.forEach(s=>s.gap=(s.up-g.min)/g.min*100);
+  out.push(g);
+ }
+ return out;
+}
+const days=d=>(Date.now()-Date.parse(d))/864e5;
+
+/* ---------- comparatif ---------- */
+['c-vue','c-rayon','c-q','c-multi'].forEach(i=>F(i).addEventListener('input',renderComp));
+F('c-ib').addEventListener('change',()=>{data.settings.ignoreBrand=F('c-ib').checked;save();renderComp()});
+function renderComp(){
+ const ib=data.settings.ignoreBrand;F('c-ib').checked=ib;
+ let gs=groups(ib);
+ const rs=[...new Set(gs.map(g=>g.rayon))].sort((a,b)=>a.localeCompare(b,'fr'));
+ const rv=F('c-rayon').value;
+ F('c-rayon').innerHTML='<option value="">Tous les rayons</option>'+rs.map(r=>'<option'+(r===rv?' selected':'')+'>'+esc(r)+'</option>').join('');
+ const q=norm(F('c-q').value),multi=F('c-multi').checked,ray=F('c-rayon').value;
+ gs=gs.filter(g=>(!ray||g.rayon===ray)&&(!q||norm(g.label).includes(q)));
+ const cmp=gs.filter(g=>g.stores.length>=2);
+ if(F('c-vue').value==='rayon')return renderRayons(cmp);
+ const list=(multi?cmp:gs).sort((a,b)=>a.label.localeCompare(b.label,'fr'));
+ if(!list.length){F('c-out').innerHTML='<div class="card mut">Rien à comparer pour l’instant : il faut au moins 2 enseignes pour un même produit.</div>';return}
+ // synthèse globale par enseigne
+ F('c-out').innerHTML=summaryBlock(cmp)+list.map(g=>
+  '<div class="card"><div class="row" style="justify-content:space-between"><b>'+esc(g.label)+'</b><span class="tag">'+esc(g.rayon)+'</span></div>'+
+  '<table><tr><th>Enseigne</th><th class="n">Prix</th><th class="n">€/'+g.fam+'</th><th class="n">Écart</th></tr>'+
+  g.stores.map((s,i)=>'<tr class="'+(days(s.e.date)>90?'old':'')+'"><td>'+esc(s.ens)+(i===0&&g.stores.length>1?' <span class="tag best">meilleur</span>':'')+(s.e.promo?' <span class="tag">promo</span>':'')+
+   '<div class="mut">'+fdate(s.e.date)+' · '+s.e.quantite.toString().replace('.',',')+' '+esc(s.e.unite)+(ib&&s.e.marque?' · '+esc(s.e.marque):'')+'</div></td><td class="n">'+eur(s.e.prix)+'</td><td class="n">'+eur(s.up)+'</td><td class="n '+(s.gap===0?'ok':s.gap>15?'ko':'wa')+'">'+(s.gap===0?'–':pct(s.gap))+'</td></tr>').join('')+'</table></div>').join('');
+}
+function avgByStore(cmp){
+ const m=new Map();
+ for(const g of cmp)for(const s of g.stores){if(!m.has(s.ens))m.set(s.ens,{n:0,sum:0,wins:0});const o=m.get(s.ens);o.n++;o.sum+=s.gap;if(s.gap===0)o.wins++}
+ return [...m].map(([ens,o])=>({ens,n:o.n,avg:o.sum/o.n,wins:o.wins})).sort((a,b)=>a.avg-b.avg);
+}
+function summaryBlock(cmp){
+ if(!cmp.length)return '';
+ const a=avgByStore(cmp),mx=Math.max(1,...a.map(x=>x.avg));
+ return '<div class="card"><h3>Synthèse : écart moyen par enseigne</h3>'+a.map(x=>
+  '<div style="margin:8px 0"><div class="row" style="justify-content:space-between"><span>'+esc(x.ens)+(x===a[0]?' <span class="tag best">le moins cher</span>':'')+'</span><span class="'+(x.avg<1?'ok':'')+'">'+(x.avg<0.05?'référence':pct(x.avg))+'</span></div>'+
+  '<div class="bar" style="width:'+Math.max(2,x.avg/mx*100)+'%"></div><div class="mut">'+x.n+' produit(s) comparé(s) · moins cher sur '+x.wins+'</div></div>').join('')+'</div>';
+}
+function renderRayons(cmp){
+ if(!cmp.length){F('c-out').innerHTML='<div class="card mut">Rien à comparer pour l’instant.</div>';return}
+ const by=new Map();for(const g of cmp){if(!by.has(g.rayon))by.set(g.rayon,[]);by.get(g.rayon).push(g)}
+ F('c-out').innerHTML=summaryBlock(cmp)+[...by].sort((a,b)=>a[0].localeCompare(b[0],'fr')).map(([r,gs])=>{
+  const a=avgByStore(gs),mx=Math.max(1,...a.map(x=>x.avg));
+  return '<div class="card"><h3>'+esc(r)+' <span class="mut">('+gs.length+' produit'+(gs.length>1?'s':'')+' comparé'+(gs.length>1?'s':'')+')</span></h3>'+a.map(x=>
+   '<div style="margin:8px 0"><div class="row" style="justify-content:space-between"><span>'+esc(x.ens)+(x===a[0]?' <span class="tag best">meilleur</span>':'')+'</span><span>'+(x.avg<0.05?'référence':pct(x.avg))+'</span></div>'+
+   '<div class="bar" style="width:'+Math.max(2,x.avg/mx*100)+'%"></div><div class="mut">sur '+x.n+' produit(s)</div></div>').join('')+'</div>';
+ }).join('');
+}
+
+/* ---------- évolution ---------- */
+F('e-prod').addEventListener('change',renderEvol);
+F('e-ib').addEventListener('change',()=>{data.settings.ignoreBrand=F('e-ib').checked;save();renderEvol()});
+const COL=['#2f6fed','#e5484d','#1b9a5a','#d98a00','#8e4ec6','#0ea5b7','#c2410c','#64748b'];
+function renderEvol(){
+ const ib=data.settings.ignoreBrand;F('e-ib').checked=ib;
+ const gs=groups(ib).sort((a,b)=>b.items.length-a.items.length||a.label.localeCompare(b.label,'fr'));
+ if(!gs.length){F('e-prod').innerHTML='';F('e-out').innerHTML='<div class="card mut">Aucun relevé.</div>';return}
+ const cur=F('e-prod').value;
+ F('e-prod').innerHTML=gs.map(g=>'<option value="'+esc(g.key)+'"'+(g.key===cur?' selected':'')+'>'+esc(g.label)+' ('+g.items.length+')</option>').join('');
+ const g=gs.find(x=>x.key===F('e-prod').value)||gs[0];
+ const ens=[...new Set(g.items.map(e=>e.enseigne))];
+ const series=ens.map((n,i)=>({name:n,color:COL[i%COL.length],pts:g.items.filter(e=>e.enseigne===n).map(e=>({t:Date.parse(e.date),v:unitPrice(e),e}))}));
+ let html='<div class="card"><h3>'+esc(g.label)+' <span class="mut">— €/'+g.fam+'</span></h3>'+chart(series)+
+  '<div class="legend">'+series.map(s=>'<span><i style="background:'+s.color+'"></i>'+esc(s.name)+'</span>').join('')+'</div></div>';
+ html+='<div class="card"><h3>Bilan par enseigne</h3><table><tr><th>Enseigne</th><th class="n">Premier</th><th class="n">Dernier</th><th class="n">Évol.</th></tr>'+
+  series.map(s=>{const f=s.pts[0],l=s.pts[s.pts.length-1],v=s.pts.length>1?(l.v-f.v)/f.v*100:null;
+   return '<tr><td>'+esc(s.name)+'<div class="mut">'+s.pts.length+' relevé(s) · min '+eur(Math.min(...s.pts.map(p=>p.v)))+' · max '+eur(Math.max(...s.pts.map(p=>p.v)))+'</div></td><td class="n">'+eur(f.v)+'<div class="mut">'+fdate(f.e.date)+'</div></td><td class="n">'+eur(l.v)+'<div class="mut">'+fdate(l.e.date)+'</div></td><td class="n '+(v==null?'':v>0?'ko':v<0?'ok':'')+'">'+(v==null?'–':pct(v))+'</td></tr>'}).join('')+'</table></div>';
+ html+='<div class="card"><h3>Historique</h3><table><tr><th>Date</th><th>Enseigne</th><th class="n">€/'+g.fam+'</th><th class="n">vs préc.</th></tr>'+
+  [...g.items].reverse().map(e=>{const s=series.find(x=>x.name===e.enseigne),i=s.pts.findIndex(p=>p.e===e),p=i>0?s.pts[i-1]:null,v=p?(unitPrice(e)-p.v)/p.v*100:null;
+   return '<tr><td>'+fdate(e.date)+'</td><td>'+esc(e.enseigne)+(e.promo?' <span class="tag">promo</span>':'')+'</td><td class="n">'+eur(unitPrice(e))+'</td><td class="n '+(v==null?'':v>0?'ko':v<0?'ok':'')+'">'+(v==null?'–':pct(v))+'</td></tr>'}).join('')+'</table></div>';
+ F('e-out').innerHTML=html;
+}
+function chart(series){
+ const W=640,H=250,P={l:52,r:14,t:12,b:26};
+ const all=series.flatMap(s=>s.pts);let t0=Math.min(...all.map(p=>p.t)),t1=Math.max(...all.map(p=>p.t));
+ let v0=Math.min(...all.map(p=>p.v)),v1=Math.max(...all.map(p=>p.v));
+ if(t0===t1){t0-=864e5*7;t1+=864e5*7}
+ const pad=(v1-v0)*.15||v1*.1||1;v0=Math.max(0,v0-pad);v1+=pad;
+ const x=t=>P.l+(t-t0)/(t1-t0)*(W-P.l-P.r),y=v=>H-P.b-(v-v0)/(v1-v0)*(H-P.t-P.b);
+ let s='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
+ for(let i=0;i<=4;i++){const v=v0+(v1-v0)*i/4;s+='<line x1="'+P.l+'" x2="'+(W-P.r)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--bd)"/><text x="'+(P.l-6)+'" y="'+(y(v)+4)+'" text-anchor="end" font-size="11" fill="var(--mut)">'+v.toFixed(2).replace('.',',')+'</text>'}
+ const fd=t=>{const d=new Date(t);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getFullYear()).slice(2)};
+ s+='<text x="'+P.l+'" y="'+(H-6)+'" font-size="11" fill="var(--mut)">'+fd(t0)+'</text><text x="'+(W-P.r)+'" y="'+(H-6)+'" text-anchor="end" font-size="11" fill="var(--mut)">'+fd(t1)+'</text>';
+ for(const se of series){
+  const pts=[...se.pts].sort((a,b)=>a.t-b.t);
+  if(pts.length>1)s+='<polyline fill="none" stroke="'+se.color+'" stroke-width="2" points="'+pts.map(p=>x(p.t)+','+y(p.v)).join(' ')+'"/>';
+  for(const p of pts)s+='<circle cx="'+x(p.t)+'" cy="'+y(p.v)+'" r="4" fill="'+se.color+'"><title>'+esc(se.name)+' · '+fdate(p.e.date)+' · '+p.v.toFixed(2)+' €</title></circle>';
+ }
+ return s+'</svg>';
+}
+
+/* ---------- import tickets / données ---------- */
+let pending=[];
+F('paste').onclick=async()=>{try{F('imp').value=await navigator.clipboard.readText();analyse()}catch(e){alert('Colle le texte manuellement dans la zone.')}};
+F('analyse').onclick=analyse;
+F('loadtk').onclick=()=>F('filetk').click();
+F('filetk').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;F('imp').value=await f.text();analyse();ev.target.value=''};
+function analyse(){
+ let txt=F('imp').value.trim().replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+ const out=F('imp-out');pending=[];
+ if(!txt){out.innerHTML='';return}
+ let j;try{j=JSON.parse(txt)}catch(e){out.innerHTML='<div class="ko">JSON invalide : '+esc(e.message)+'</div>';return}
+ let arts,def={},total=null,tks=null;
+ if(Array.isArray(j))arts=j;
+ else if(Array.isArray(j.tickets)){tks=j.tickets;arts=[];tks.forEach((t,k)=>(t.articles||[]).forEach(a=>arts.push(Object.assign({},a,{enseigne:a.enseigne||t.enseigne,date:a.date||t.date,_k:k}))))}
+ else{arts=j.articles||j.entries||[];def={enseigne:j.enseigne,date:j.date};total=j.total!=null?num(j.total):null}
+ const rows=arts.map(a=>{
+  const e={id:uid(),_k:a._k||0,produit:String(a.produit||a.nom||'').trim(),marque:String(a.marque||'').trim(),enseigne:String(a.enseigne||def.enseigne||'').trim(),rayon:String(a.rayon||'').trim(),
+   prix:num(a.prix),quantite:num(a.quantite),unite:normUnit(a.unite),date:String(a.date||def.date||today()),promo:!!a.promo};
+  const err=[];if(!e.produit)err.push('produit');if(!e.enseigne)err.push('enseigne');if(!(e.prix>=0))err.push('prix');if(!(e.quantite>0))err.push('quantité');if(!e.unite)err.push('unité');if(!/^\d{4}-\d{2}-\d{2}$/.test(e.date))err.push('date');
+  e.err=err;e.dup=!err.length&&data.entries.some(x=>x.enseigne===e.enseigne&&x.date===e.date&&norm(x.produit)===norm(e.produit)&&norm(x.marque)===norm(e.marque)&&Math.abs(x.prix-e.prix)<.001);
+  return e});
+ pending=rows.filter(r=>!r.err.length&&!r.dup);
+ const sum=rows.filter(r=>!r.err.length).reduce((s,r)=>s+r.prix,0);
+ let h='<h3 style="margin-top:12px">'+rows.length+' ligne(s) lue(s)</h3><table><tr><th>Produit</th><th class="n">Prix</th><th class="n">Qté</th><th></th></tr>'+rows.map(r=>
+  '<tr class="'+(r.err.length||r.dup?'old':'')+'"><td>'+esc(r.produit)+'<div class="mut">'+esc([(tks?r.enseigne+' '+fdate(r.date):''),r.marque,r.rayon].filter(Boolean).join(' · '))+'</div></td><td class="n">'+(isNaN(r.prix)?'?':eur(r.prix))+'</td><td class="n">'+(isNaN(r.quantite)?'?':r.quantite.toString().replace('.',','))+' '+esc(r.unite||'?')+'</td><td>'+(r.err.length?'<span class="ko">manque : '+r.err.join(', ')+'</span>':r.dup?'<span class="wa">doublon</span>':'<span class="ok">✓</span>')+'</td></tr>').join('')+'</table>';
+ if(tks)h+='<div style="margin-top:6px">'+tks.map((t,k)=>{const s=rows.filter(r=>r._k===k&&!r.err.length).reduce((a,r)=>a+r.prix,0),tt=t.total!=null?num(t.total):null;return '<div class="mut">'+esc(t.enseigne||'')+' · '+fdate(t.date||'')+' : somme <b>'+eur(s)+'</b>'+(tt!=null?' · ticket <b>'+eur(tt)+'</b> '+(Math.abs(tt-s)<.02?'<span class="ok">✓ cohérent</span>':'<span class="ko">écart de '+eur(tt-s)+'</span>'):'')+'</div>'}).join('')+'</div>';
+ else h+='<div class="mut" style="margin-top:6px">Somme des lignes : <b>'+eur(sum)+'</b>'+(total!=null?' · total du ticket : <b>'+eur(total)+'</b> '+(Math.abs(total-sum)<.02?'<span class="ok">✓ cohérent</span>':'<span class="ko">écart de '+eur(total-sum)+' (remises, articles manquants ?)</span>'):'')+'</div>';
+ h+='<div class="row" style="margin-top:8px"><button class="b" id="doimp"'+(pending.length?'':' disabled')+'>Importer '+pending.length+' ligne(s)</button></div>';
+ out.innerHTML=h;
+ const b=$('#doimp');if(b)b.onclick=()=>{pending.forEach(r=>{delete r.err;delete r.dup;delete r._k;data.entries.push(r)});save();const n=pending.length;pending=[];F('imp').value='';out.innerHTML='<div class="ok" style="margin-top:8px">'+n+' relevé(s) importé(s). Tu peux les corriger dans l’onglet Liste.</div>';renderData()}
+}
+function renderData(){F('stats').textContent=data.entries.length+' relevé(s) · '+uniq('enseigne').length+' enseigne(s) · '+new Set(data.entries.map(e=>norm(e.produit))).size+' produit(s) distinct(s)'}
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+async function dl(name,mime,content){
+ if(isIOS){try{const f=new File([content],name,{type:mime.startsWith('text/')?mime:'text/plain'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name});return}}catch(e){if(e&&e.name==='AbortError')return}}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+F('exp').onclick=()=>dl('comparateur-prix-'+today()+'.json','application/json',JSON.stringify(data,null,1));
+F('expcsv').onclick=()=>{const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+ dl('comparateur-prix-'+today()+'.csv','text/csv;charset=utf-8','\ufeff'+['date','enseigne','rayon','produit','marque','prix','quantite','unite','prix_unitaire','unite_ref','promo'].join(';')+'\n'+
+ data.entries.map(e=>[e.date,e.enseigne,e.rayon,e.produit,e.marque,e.prix,e.quantite,e.unite,unitPrice(e).toFixed(4),fam(e),e.promo?1:0].map(q).join(';')).join('\n'))};
+F('impfile').onclick=()=>F('file').click();
+F('file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.entries))throw new Error('format inconnu');
+ if(confirm('Remplacer les données actuelles ('+data.entries.length+') par celles du fichier ('+d.entries.length+') ?')){data.entries=d.entries;data.shopping=d.shopping||[];data.settings=Object.assign(data.settings,d.settings||{});save();renderData()}}catch(e){alert('Fichier invalide : '+e.message)}ev.target.value=''};
+F('wipe').onclick=()=>{if(confirm('Effacer TOUS les relevés ? (pense à exporter avant)')&&confirm('Vraiment tout effacer ?')){data.entries=[];save();renderData()}};
+
+/* ---------- courses ---------- */
+const REFU={kg:['g','kg'],L:['ml','cl','L'],'pièce':['pièce']};
+let SG=[];
+const rnd=n=>Math.round(n*1000)/1000;
+const itLabel=it=>it.produit+(it.marque&&!data.settings.ignoreBrand?' — '+it.marque:'');
+const qtyTxt=it=>rnd(it.qty).toString().replace('.',',')+' '+it.fam;
+function storePrices(it,ib){
+ const m=new Map();
+ for(const e of data.entries.filter(e=>norm(e.produit)===norm(it.produit)&&(ib||norm(e.marque)===norm(it.marque))&&fam(e)===it.fam&&unitPrice(e)!=null).sort((a,b)=>(a.date||'').localeCompare(b.date||'')))m.set(e.enseigne,e);
+ return [...m.values()].map(e=>({ens:e.enseigne,e,up:unitPrice(e)})).sort((a,b)=>a.up-b.up);
+}
+function fillSU(){
+ const g=SG.find(x=>x.key===F('s-prod').value),f=g?g.fam:'kg';
+ F('s-u').innerHTML=REFU[f].map(u=>'<option'+(u===f?' selected':'')+'>'+u+'</option>').join('');
+}
+F('s-prod').addEventListener('change',fillSU);
+F('s-add').onclick=()=>{
+ const g=SG.find(x=>x.key===F('s-prod').value),q=num(F('s-q').value);if(!g||!(q>0))return;
+ const u=F('s-u').value,last=g.items[g.items.length-1];
+ data.shopping.push({id:uid(),produit:last.produit,marque:last.marque||'',fam:g.fam,qty:q*UNITS[u].m,done:false});
+ save();F('s-q').value='1';renderCourses();
+};
+function renderCourses(){
+ SG=groups(false).sort((a,b)=>a.label.localeCompare(b.label,'fr'));
+ const cur=F('s-prod').value;
+ F('s-prod').innerHTML=SG.length?SG.map(g=>'<option value="'+esc(g.key)+'"'+(g.key===cur?' selected':'')+'>'+esc(g.label)+' (€/'+g.fam+')</option>').join(''):'<option value="">Saisis d’abord des relevés</option>';
+ fillSU();
+ const ib=data.settings.ignoreBrand,items=data.shopping;
+ if(!items.length){F('s-out').innerHTML='<div class="card mut">Ta liste est vide.</div>';return}
+ const info=items.map(it=>({it,sp:storePrices(it,ib)})),act=info.filter(x=>!x.it.done);
+ let h='';
+ if(act.length){
+  const by=new Map(),unk=[];let tot=0;
+  for(const x of act){
+   if(!x.sp.length){unk.push(x.it);continue}
+   const b=x.sp[0],c=x.it.qty*b.up;tot+=c;
+   if(!by.has(b.ens))by.set(b.ens,{s:0,l:[]});const o=by.get(b.ens);o.s+=c;o.l.push({it:x.it,c,b});
+  }
+  const stores=[...new Set(act.flatMap(x=>x.sp.map(s=>s.ens)))];
+  const rows=stores.map(ens=>{let n=0,t=0;for(const x of act){const s=x.sp.find(y=>y.ens===ens);if(s){n++;t+=x.it.qty*s.up}}return{ens,n,t}});
+  const full=rows.filter(r=>r.n===act.length).sort((a,b)=>a.t-b.t),part=rows.filter(r=>r.n<act.length).sort((a,b)=>b.n-a.n||a.t-b.t);
+  h+='<div class="card"><h3>Où acheter (le moins cher par article)</h3>'+[...by].sort((a,b)=>b[1].s-a[1].s).map(([ens,o])=>
+   '<div style="margin:8px 0"><div class="row" style="justify-content:space-between"><b>'+esc(ens)+'</b><b>'+eur(o.s)+'</b></div>'+
+   o.l.map(x=>'<div class="mut">'+esc(itLabel(x.it))+' · '+qtyTxt(x.it)+' × '+eur(x.b.up)+'/'+x.it.fam+' ≈ '+eur(x.c)+'</div>').join('')+'</div>').join('')+
+   '<div class="row" style="justify-content:space-between;border-top:1px solid var(--bd);padding-top:6px"><b>Total estimé en faisant le tour</b><b>'+eur(tot)+'</b></div>'+
+   (!unk.length&&full.length&&full[0].t-tot>0.005?'<div class="ok" style="margin-top:4px">Économie de '+eur(full[0].t-tot)+' par rapport à tout acheter chez '+esc(full[0].ens)+'.</div>':'')+
+   (unk.length?'<div class="mut wa" style="margin-top:4px">Sans prix connu : '+unk.map(i=>esc(itLabel(i))).join(', ')+'</div>':'')+'</div>';
+  if(rows.length)h+='<div class="card"><h3>Coût du panier par enseigne</h3><table><tr><th>Enseigne</th><th class="n">Couverture</th><th class="n">Total</th><th class="n">Écart</th></tr>'+
+   full.map((r,i)=>'<tr><td>'+esc(r.ens)+(i===0&&full.length>1?' <span class="tag best">moins cher</span>':'')+'</td><td class="n">'+r.n+'/'+act.length+'</td><td class="n">'+eur(r.t)+'</td><td class="n '+(i===0?'ok':'wa')+'">'+(i===0?'–':pct((r.t-full[0].t)/full[0].t*100))+'</td></tr>').join('')+
+   part.map(r=>'<tr class="old"><td>'+esc(r.ens)+'</td><td class="n">'+r.n+'/'+act.length+'</td><td class="n">'+eur(r.t)+' *</td><td class="n">n/c</td></tr>').join('')+'</table>'+
+   (part.length?'<div class="mut">* total partiel : l’enseigne n’a pas tous les articles, non comparable.</div>':'')+(full.length?'':'<div class="mut wa">Aucune enseigne ne couvre tous les articles de la liste.</div>')+'</div>';
+ }
+ h+='<div class="card"><h3>Ma liste</h3>'+info.map(x=>{const b=x.sp[0];return '<div class="row" style="justify-content:space-between;margin:8px 0;'+(x.it.done?'opacity:.5;text-decoration:line-through':'')+'"><label style="display:flex;gap:8px;align-items:center;margin:0;font-size:15px;color:var(--tx)"><input type="checkbox" data-done="'+x.it.id+'"'+(x.it.done?' checked':'')+'><span>'+esc(itLabel(x.it))+'<div class="mut">'+qtyTxt(x.it)+(b?' · moins cher : '+esc(b.ens)+' '+eur(b.up)+'/'+x.it.fam:' · aucun prix')+'</div></span></label><button class="s d" data-rm="'+x.it.id+'">✕</button></div>'}).join('')+
+  '<div class="row"><button class="s" id="s-clean">Retirer les articles cochés</button></div></div>';
+ F('s-out').innerHTML=h;
+ F('s-out').querySelectorAll('[data-done]').forEach(c=>c.onchange=()=>{const it=data.shopping.find(x=>x.id===c.dataset.done);if(it){it.done=c.checked;save();renderCourses()}});
+ F('s-out').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{data.shopping=data.shopping.filter(x=>x.id!==b.dataset.rm);save();renderCourses()});
+ const cl=$('#s-clean');if(cl)cl.onclick=()=>{data.shopping=data.shopping.filter(x=>!x.done);save();renderCourses()};
+}
+
+/* ---------- alertes ---------- */
+function shrunk(a,b){const qa=a.quantite*UNITS[a.unite].m,qb=b.quantite*UNITS[b.unite].m;return qb<qa*.999&&b.prix>=a.prix*.98}
+function alertNote(e){
+ if(unitPrice(e)==null)return '';
+ const k=pkey(e,false),prev=data.entries.filter(x=>x.id!==e.id&&pkey(x,false)===k&&x.enseigne===e.enseigne&&unitPrice(x)!=null&&(x.date||'')<=(e.date||'')).sort((a,b)=>(a.date||'').localeCompare(b.date||'')).pop();
+ if(!prev)return '';
+ if(shrunk(prev,e)){const qa=prev.quantite*UNITS[prev.unite].m,qb=e.quantite*UNITS[e.unite].m;return ' ⚠️ Shrinkflation : contenu réduit de '+((qa-qb)/qa*100).toFixed(1).replace('.',',')+' % à prix quasi égal ('+pct((unitPrice(e)-unitPrice(prev))/unitPrice(prev)*100)+' au '+fam(e)+').'}
+ const ch=(unitPrice(e)-unitPrice(prev))/unitPrice(prev)*100;
+ return Math.abs(ch)>=data.settings.alertPct?(ch>0?' ⚠️ ':' 👍 ')+pct(ch)+' depuis le relevé du '+fdate(prev.date)+' dans cette enseigne.':'';
+}
+F('a-pct').addEventListener('input',()=>{const v=num(F('a-pct').value);if(v>=0){data.settings.alertPct=v;save();renderAlertes()}});
+function renderAlertes(){
+ const thr=data.settings.alertPct;
+ if(document.activeElement!==F('a-pct'))F('a-pct').value=String(thr).replace('.',',');
+ const ser=new Map();
+ for(const e of data.entries){if(unitPrice(e)==null)continue;const k=pkey(e,false)+'#'+e.enseigne;if(!ser.has(k))ser.set(k,[]);ser.get(k).push(e)}
+ const vars=[],shr=[];
+ for(const arr of ser.values()){
+  arr.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if(arr.length>=2){const l=arr[arr.length-1],p=arr[arr.length-2],ch=(unitPrice(l)-unitPrice(p))/unitPrice(p)*100;if(Math.abs(ch)>=thr&&!shrunk(p,l))vars.push({l,p,ch})}
+  for(let i=1;i<arr.length;i++)if(shrunk(arr[i-1],arr[i]))shr.push({a:arr[i-1],b:arr[i]});
+ }
+ vars.sort((x,y)=>Math.abs(y.ch)-Math.abs(x.ch));shr.sort((x,y)=>(y.b.date||'').localeCompare(x.b.date||''));
+ const lows=groups(data.settings.ignoreBrand).filter(g=>g.items.length>=3).map(g=>{
+  const l=g.items[g.items.length-1],ups=g.items.map(unitPrice),u=unitPrice(l);
+  return{g,l,u,ok:u<=Math.min(...ups)+1e-9&&Math.max(...ups)>u*1.05&&days(l.date)<=45}}).filter(x=>x.ok);
+ const nm=e=>esc(e.produit)+(e.marque?' — '+esc(e.marque):'');
+ let h='';
+ h+='<div class="card"><h3>Variations ≥ '+String(thr).replace('.',',')+' %</h3>'+(vars.length?'<table>'+vars.map(v=>'<tr><td>'+nm(v.l)+'<div class="mut">'+esc(v.l.enseigne)+' · '+fdate(v.p.date)+' → '+fdate(v.l.date)+'</div></td><td class="n">'+eur(unitPrice(v.p))+' → '+eur(unitPrice(v.l))+'/'+fam(v.l)+'</td><td class="n '+(v.ch>0?'ko':'ok')+'">'+pct(v.ch)+'</td></tr>').join('')+'</table>':'<div class="mut">Aucune variation notable entre les deux derniers relevés de chaque produit.</div>')+'</div>';
+ h+='<div class="card"><h3>Shrinkflation détectée</h3>'+(shr.length?shr.map(s=>{const qa=s.a.quantite*UNITS[s.a.unite].m,qb=s.b.quantite*UNITS[s.b.unite].m;
+  return '<div style="margin:8px 0"><b>'+nm(s.b)+'</b> <span class="tag">'+esc(s.b.enseigne)+'</span><div class="mut">'+s.a.quantite.toString().replace('.',',')+' '+esc(s.a.unite)+' à '+eur(s.a.prix)+' ('+fdate(s.a.date)+') → '+s.b.quantite.toString().replace('.',',')+' '+esc(s.b.unite)+' à '+eur(s.b.prix)+' ('+fdate(s.b.date)+')</div><div class="ko">Contenu −'+((qa-qb)/qa*100).toFixed(1).replace('.',',')+' % · prix au '+fam(s.b)+' '+pct((unitPrice(s.b)-unitPrice(s.a))/unitPrice(s.a)*100)+'</div></div>'}).join(''):'<div class="mut">Rien de détecté : pas de baisse de contenu à prix égal pour une même marque et une même enseigne.</div>')+'</div>';
+ h+='<div class="card"><h3>Plus bas historique récent</h3>'+(lows.length?'<table>'+lows.map(x=>'<tr><td>'+esc(x.g.label)+'<div class="mut">'+esc(x.l.enseigne)+' · '+fdate(x.l.date)+'</div></td><td class="n ok">'+eur(x.u)+'/'+x.g.fam+'</td></tr>').join('')+'</table>':'<div class="mut">Aucun produit n’est à son plus bas ces 45 derniers jours (il faut au moins 3 relevés).</div>')+'</div>';
+ F('a-out').innerHTML=h;
+}
+
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+renderDL();preview();
+</script>
+</body>
+</html>
